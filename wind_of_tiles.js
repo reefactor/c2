@@ -46,6 +46,20 @@ function getNewspaper() {
     var s = window.filterString ? window.filterString : ''
     var gd = $('#slider-gd').val()
     var vatnik = $('#slider-vatnik').val()
+
+    // disclaimer
+    gd = parseInt(gd);
+    vatnik = parseInt(vatnik)
+    if (gd < 30 || gd > 70 || vatnik > 30) {
+        new jBox("Notice", {
+            content: "Need more training data for that",
+            color: "black",
+            offset: {
+                y: 50
+            }
+        })
+    }
+
     $('.topspinner').show();
     $.ajax({
         type: 'GET',
@@ -63,6 +77,7 @@ function getNewspaper() {
         error: function(xhr, textStatus) {
             $('.topspinner').hide();
             console.error('no newspaper:', textStatus, xhr.statusCode())
+            popupNotice(`Error network failure while loading feed ${textStatus}`, 'red')
         }
     })
 }
@@ -93,8 +108,11 @@ function renderEvents(data) {
     });
 
     // crude junk filter
+    var now = moment()
     data.articles = _.filter(data.articles, function(item) {
-        return item.description.length + item.text.length > 90
+        var hasContent = item.description.length + item.text.length > 90;
+        var dateOk = item.publish_date_m.isBefore(now)
+        return hasContent && dateOk;
     })
 
 
@@ -180,7 +198,7 @@ function renderEvents(data) {
             $('.WindOfTiles').append(html)
             initLayout()
         } else {
-            $('#zcontent').html('<img src="ui/not-found.gif" class="mx-auto my-5 img-rounded d-block" style="width:25rem" alt="">')
+            $('#zcontent').html('<img src="ui/not-found.gif" class="mx-auto my-5 img-rounded d-block" style="width:15rem" alt="">')
         }
     }
 
@@ -312,7 +330,7 @@ function renderDeckCard(item, i) {
             <div class="card-footer bg-transparent border-success">
                 <i class="fa fa-calendar-alt"></i>                 
                 <a href="${item.url}" class="text-secondary" style="font-weight: 100;">
-                ${siteName} ${moment(item.publish_date).format('D.M.YYYY, HH:mm')}
+                ${siteName} ${item.publish_date_m.format('D.M.YYYY, HH:mm')}
                 </a>
             </div>
 
@@ -432,6 +450,12 @@ function initNavHandlers() {
     // prototype functionality warning 
     $('.ui-slider').attr('title', 'Need more training data')
     new jBox('Tooltip', { attach: '.ui-slider' });
+    // @todo fix touch tooltips
+    $('.ui-slider-handle').attr('title', 'Need more training data')
+    new jBox('Tooltip', { attach: '.ui-slider-handle', trigger: 'touchclick' });
+    $('.ui-slider-track').attr('title', 'Need more training data')
+    new jBox('Tooltip', { attach: '.ui-slider-track', trigger: 'touchclick' });
+
 }
 
 function apiPost(urlPath, data, callback) {
@@ -451,7 +475,7 @@ function apiPost(urlPath, data, callback) {
 
 }
 
-function popupNotice(message) {
+function popupNotice(message, color) {
     new jBox("Notice", {
         content: message,
         theme: "NoticeFancy",
@@ -459,7 +483,7 @@ function popupNotice(message) {
             x: "left",
             y: "bottom"
         },
-        color: 'yellow',
+        color: color || 'yellow',
         audio: "https://cdn.jsdelivr.net/gh/StephanWagner/jBox@latest/assets/audio/bling2",
         volume: 5,
         animation: {
@@ -472,10 +496,10 @@ function popupNotice(message) {
 function fixIsotopeLayoutIssues() {
     // fix isotope lib layout bugs
     function updateIsotopeLayout() {
-        if (window.itemsList.length)
+        if (window.itemsList.length) {
             $('.WindOfTiles').isotope('layout');
+            setTimeout(updateIsotopeLayout, 3000)
+        }
     }
-    setTimeout(updateIsotopeLayout, 3000)
-    setTimeout(updateIsotopeLayout, 5000)
-    setTimeout(updateIsotopeLayout, 7000)
+    updateIsotopeLayout()
 }
