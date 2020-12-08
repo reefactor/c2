@@ -1,4 +1,4 @@
-var przmBaseUrl = 'https://proto-c2.autofaq.ai'
+przmBaseUrl = 'https://proto-c2.autofaq.ai'
 
 // Persistent toolbars
 // http://view.jquerymobile.com/master/demos/toolbar-fixed-persistent/index.php
@@ -37,6 +37,11 @@ $(document).on("mobileinit", function() {
 
 
 $(document).ready(function() {
+
+    if (getUrlParameter('url')) {
+        przmBaseUrl = getUrlParameter('url')
+    }
+
     getNewspaper()
     initNavHandlers()
 });
@@ -175,6 +180,7 @@ function renderEvents(data) {
     var i = 0;
     //asyncRenderCards()
     syncRenderCards()
+    lazyLoadTileImages()
 
 
     function syncRenderCards() {
@@ -313,7 +319,7 @@ function renderDeckCard(item, i) {
     var template = `
     <div class="card bg-light mb-5 ml-0 card-tile-np" data-itemindex="${i}" style="max-width: 95%; cursor: pointer;">
  
-       <img class="card-img-top" src="${item.top_image}" alt="">
+       <img class="card-img-top" data-src="${item.top_image}" alt="" style="display:block">
        <div class="card-img-overlay-">
 
 
@@ -498,8 +504,37 @@ function fixIsotopeLayoutIssues() {
     function updateIsotopeLayout() {
         if (window.itemsList.length) {
             $('.WindOfTiles').isotope('layout');
-            setTimeout(updateIsotopeLayout, 3000)
+            setTimeout(updateIsotopeLayout, 5000)
         }
     }
     updateIsotopeLayout()
 }
+
+function getUrlParameter(param) {
+    var sURLVariables = window.location.search.substring(1).split('&');
+    for (var i = 0; i < sURLVariables.length; i++) {
+        var sParameterName = sURLVariables[i].split('=');
+        if (sParameterName[0] === param) {
+            return sParameterName[1] === undefined ? true : decodeURIComponent(sParameterName[1]);
+        }
+    }
+};
+
+function lazyLoadTileImages() {
+    const inAdvance = 600
+    $('img.card-img-top').each((i, tag) => {
+        var inViewport = $(tag).offset().top < window.pageYOffset + window.innerHeight + inAdvance &&
+            $(tag).offset().top >= window.pageYOffset - inAdvance
+        if (inViewport) {
+            if (!tag.src) {
+                tag.src = tag.dataset.src;
+                // todo handle case - 'load' not fired if img in browser cache
+                $(tag).on("load", function() {
+                    $('.WindOfTiles').isotope('layout');
+                });
+            }
+        }
+    })
+}
+
+$(window).on('scroll resize orientationChange', _.throttle(lazyLoadTileImages, 300))
