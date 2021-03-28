@@ -134,12 +134,34 @@ function renderEvents(data) {
         return item
     });
 
+
+    // sort feed
     data.articles = data.articles.sort(function(a, b) {
-        //if (a.publish_date_m.isSame(b.publish_date_m)) return 0;
-        if (a.publish_date_m.isAfter(b.publish_date_m)) return -1;
-        if (a.publish_date_m.isBefore(b.publish_date_m)) return 1;
-        return 0;
+        // first sort by number of sources
+        var aStory = getStoryByArticleUrl(a.url)
+        var bStory = getStoryByArticleUrl(b.url)
+        if (aStory && bStory) {
+            if (aStory.urls.length == bStory.urls.length) return sorterByArticlePublishDate(a, b)
+            if (aStory.urls.length > bStory.urls.length) return 1
+            if (aStory.urls.length <= bStory.urls.length) return -1
+        } else {
+            if (!aStory && !bStory) {
+                return sorterByArticlePublishDate(a, b)
+            }
+            if (!aStory) return 1
+            if (!bStory) return -1
+        }
+
+        // sort by fressness
+        return sorterByArticlePublishDate(a, b)
     });
+
+    function sorterByArticlePublishDate(a, b) {
+        ///if (a.publish_date_m.isSame(b.publish_date_m)) return 0
+        if (a.publish_date_m.isAfter(b.publish_date_m)) return -1
+        if (a.publish_date_m.isBefore(b.publish_date_m)) return 1
+        return 0
+    }
 
     /*
     var data_articles_count = data.articles.length
@@ -165,13 +187,21 @@ function renderEvents(data) {
 
         //var ar = _.find(articles, function(a) { return a.url === urls[0] })
         //var story = Object.assign({}, articlesUrlStoryIndex[u]);
-        var e = articlesUrlStoryIndex[article.url];
-        if (e) {
-            article.urls = e[0].story.urls
+        //var e = articlesUrlStoryIndex[article.url];
+        var story = getStoryByArticleUrl(article.url)
+        if (story) {
+            article.urls = story.urls
         }
 
         //article.urls = urls; //.splice()
         return article
+    }
+
+    function getStoryByArticleUrl(url) {
+        var stories = articlesUrlStoryIndex[url];
+        if (stories) {
+            return stories[0].story
+        }
     }
 
     console.log('compiled cards count:', window.itemsList.length)
@@ -189,8 +219,8 @@ function renderEvents(data) {
         $('#zcontent').html('<div class="WindOfTiles"></div>')
 
         var html = ''
-        var maxDateAgo = moment().subtract(30, 'days');
-        var maxTiles = 512;
+        var maxDateAgo = moment().subtract(60, 'days');
+        var maxTiles = 2048;
         while (i < Math.min(maxTiles, window.itemsList.length)) {
             html += renderDeckCard(itemsList[i], i)
             if (itemsList[i].publish_date_m.isBefore(maxDateAgo)) {
@@ -210,12 +240,13 @@ function renderEvents(data) {
 
 
     function asyncRenderCards() {
+        const maxAsyncCards = 5000;
         var item = window.itemsList[i]
         var html = renderDeckCard(item, i)
         console.log('asyncRenderCards #i', i)
         $('.WindOfTiles').append(html)
 
-        if (i >= Math.min(1000, window.itemsList.length)) {
+        if (i >= Math.min(maxAsyncCards, window.itemsList.length)) {
             initLayout()
             return;
         }
@@ -393,7 +424,8 @@ function initNavHandlers() {
 
     $('.toolbar-add-site').on('click', function(e) {
         bootbox.prompt({
-            title: 'Add Site or RSS feed',
+            title: 'Add web site or RSS feed',
+            placeholder: 'www.news.com',
             inputType: 'text',
             callback: function(result) {
                 if (!result) return
