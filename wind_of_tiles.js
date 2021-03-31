@@ -1,6 +1,7 @@
 przmBaseUrl = 'https://proto-c2.autofaq.ai'
 
-przmBaseUrl = 'http://localhost:8080'
+//przmBaseUrl = 'http://localhost:8080'
+
 
 // Persistent toolbars
 // http://view.jquerymobile.com/master/demos/toolbar-fixed-persistent/index.php
