@@ -1,5 +1,7 @@
 przmBaseUrl = 'https://proto-c2.autofaq.ai'
 
+przmBaseUrl = 'http://localhost:8080'
+
 // Persistent toolbars
 // http://view.jquerymobile.com/master/demos/toolbar-fixed-persistent/index.php
 $(function() {
@@ -142,8 +144,8 @@ function renderEvents(data) {
         var bStory = getStoryByArticleUrl(b.url)
         if (aStory && bStory) {
             if (aStory.urls.length == bStory.urls.length) return sorterByArticlePublishDate(a, b)
-            if (aStory.urls.length > bStory.urls.length) return 1
-            if (aStory.urls.length <= bStory.urls.length) return -1
+            if (aStory.urls.length > bStory.urls.length) return -1
+            if (aStory.urls.length <= bStory.urls.length) return 1
         } else {
             if (!aStory && !bStory) {
                 return sorterByArticlePublishDate(a, b)
